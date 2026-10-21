@@ -1,0 +1,87 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python src/prepare.py
+    deps:
+    - path: data/reviews.csv
+      hash: md5
+      md5: 6bbc136bf2dc2c692fc27289a2d5864c
+      size: 50562295
+    - path: src/prepare.py
+      hash: md5
+      md5: 793813aaac4bc9cef79b36b2d02447c0
+      size: 1565
+    params:
+      params.yaml:
+        prepare.seed: 20260101
+        prepare.split: 0.2
+    outs:
+    - path: data/prepared
+      hash: md5
+      md5: fe0f97faf4f8143282ce4227d9cdadef.dir
+      size: 38201663
+      nfiles: 2
+  featurize:
+    cmd: python src/featurize.py
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: fe0f97faf4f8143282ce4227d9cdadef.dir
+      size: 38201663
+      nfiles: 2
+    - path: src/featurize.py
+      hash: md5
+      md5: 45440afe2eebebca83b2cd04c87cdeeb
+      size: 1293
+    params:
+      params.yaml:
+        featurize.max_features: 10000
+        featurize.ngrams: 2
+    outs:
+    - path: data/features
+      hash: md5
+      md5: 3152240745c9cc78c91aaf9ff271c20a.dir
+      size: 75296285
+      nfiles: 3
+  train:
+    cmd: python src/train.py
+    deps:
+    - path: data/features
+      hash: md5
+      md5: 3152240745c9cc78c91aaf9ff271c20a.dir
+      size: 75296285
+      nfiles: 3
+    - path: src/train.py
+      hash: md5
+      md5: 10c73343ffb48c56b665ea0696f33616
+      size: 2913
+    params:
+      params.yaml:
+        train.C: 1.0
+        train.seed: 20260101
+    outs:
+    - path: models/model.pkl
+      hash: md5
+      md5: 5c63a596e03bdc15503c9bf0c9f0fdda
+      size: 80723
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+    - path: data/features
+      hash: md5
+      md5: 3152240745c9cc78c91aaf9ff271c20a.dir
+      size: 75296285
+      nfiles: 3
+    - path: models/model.pkl
+      hash: md5
+      md5: 5c63a596e03bdc15503c9bf0c9f0fdda
+      size: 80723
+    - path: src/evaluate.py
+      hash: md5
+      md5: 65f551a9565536e219c565a3bf3d0902
+      size: 1323
+    outs:
+    - path: eval/metrics.json
+      hash: md5
+      md5: 9c9c7b59c3b4b5c886a1877d28a579c6
+      size: 127

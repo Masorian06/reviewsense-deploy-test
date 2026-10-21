@@ -1,0 +1,10 @@
+# ReviewSense (CMPT-2500 Units 5 and 6): the pipeline, its tracking, and the API that serves it
+dvc[s3]>=3.60            # data and pipeline versioning; the s3 extra also talks to DagsHub storage
+scikit-learn>=1.6
+pandas>=2.2
+pyyaml>=6.0
+mlflow>=3.4              # run tracking and the Model Registry (aliases, logged models)
+huggingface_hub>=0.30    # src/get_data.py downloads the raw reviews from the Hub
+pandera>=0.20            # scripts/validate_data.py
+flask>=3.1               # app.py
+gunicorn>=23.0           # the production server (Linux / WSL 2); on Windows use waitress

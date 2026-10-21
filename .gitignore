@@ -1,0 +1,20 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Source files downloaded by src/get_data.py and the month-2 incoming file (rebuildable)
+data/downloads/
+data/incoming/
+
+# MLflow local tracking store (block 03)
+mlflow.db
+mlruns/
+mlartifacts/
+
+# DVC writes its own entries into data/.gitignore, models/.gitignore and .dvc/.gitignore
+
+# Test and lint caches
+.coverage
+.pytest_cache/
+.ruff_cache/
