@@ -1,0 +1,21 @@
+# .github/workflows/ci.yml — lint and test on every pull request and every push to main
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request:
+permissions:
+  contents: read                      # least privilege: this token cannot write, comment or publish
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { python: ["3.11", "3.12"] }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip                  # keyed on requirements*.txt: a 90-second install becomes ten
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: ruff check .             # seconds; fail fast
+      - run: pytest -q --cov=app tests/
