@@ -1,0 +1,33 @@
+# .github/workflows/train.yml — retrain and validate when the pipeline's inputs change, and every Monday
+name: Train
+on:
+  pull_request: { paths: ["src/**", "params.yaml", "dvc.yaml", "data/*.dvc"] }   # not on a README edit
+  push:         { branches: [main], paths: ["src/**", "params.yaml", "dvc.yaml", "data/*.dvc"] }
+  schedule:     [{ cron: "0 6 * * 1" }]                                          # Mondays 06:00 UTC: continuous training
+  workflow_dispatch:                                                             # and a button
+permissions:
+  contents: read
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    env:
+      # Settings → Secrets and variables → Actions. The DVC remote and the MLflow server are the
+      # DagsHub repository linked to this one; one token opens both (see LAB.md, step 1).
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}     # https://dagshub.com/<user>/<repo>.mlflow
+      MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USER }}       # your DagsHub user name
+      MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}      # the same token as below
+      AWS_ACCESS_KEY_ID: ${{ secrets.DAGSHUB_TOKEN }}             # DagsHub storage is S3-compatible:
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DAGSHUB_TOKEN }}         # the same token is both keys
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0 }                                   # the gate compares against main
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - run: dvc pull data/reviews.csv                             # Unit 5, step 4 — now a machine does it
+      - run: dvc repro                                             # prepare → featurize → train → evaluate, on the runner
+      - run: python scripts/validate_data.py                       # schema and class balance of data/prepared
+      - run: python scripts/gate.py --min-gain 0.002               # exit 1 unless better than the baseline
+        id: gate
+      - run: python src/register_model.py --alias challenger && dvc push   # registry version N, outputs to the remote
+        if: github.ref == 'refs/heads/main' && steps.gate.outputs.model_changed == 'true'   # PRs validate; main registers
